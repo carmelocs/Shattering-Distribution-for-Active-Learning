@@ -115,14 +115,15 @@ if __name__ == '__main__':
 
     K = rbf_kernel(data, data, 1.8)
 
-    id = halving(K,50)
+    id = halving(K, 400)
 
     X = np.random.rand(50, 2) if test else data[id]
 
     # print(data[0])
-    print(np.unique(id, return_counts=True))
-    print(X.shape)
-    print(np.unique(X, return_counts=True))
+    # print(np.unique(id, return_counts=True))
+    # print(X.shape)
+    # print(np.unique(X, return_counts=True))
+    print(len(set(id)))
 
     center = SDAL(X,4)
     print(center.shape)
