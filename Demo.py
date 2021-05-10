@@ -3,16 +3,8 @@ from sklearn.svm import SVC
 from sklearn.cluster import KMeans
 from scipy.spatial.distance import pdist
 from sklearn.neighbors import NearestNeighbors, KDTree
-
-def rbf_kernel(X, Y, sigma):
-    N, K = X.shape
-    M = Y.shape[0]
-
-    K_xy = np.ones(M)*np.sum(X**2) + np.ones(N)*np.sum(Y**2) - 2*np.dot(X, Y.transpose())
-    K_xy = np.exp(-0.5 * K_xy / sigma**2)
-
-    return K_xy
-
+from  sklearn.metrics.pairwise import rbf_kernel
+ 
 def halving(K, m, candidate_index=None, lambda_=0.001):
     
     n = K.shape[0]
@@ -114,7 +106,7 @@ if __name__ == '__main__':
     test = False
 
     # np.random.seed(0)
-    # data = np.random.rand(10, 2)
+    # data = np.random.rand(100, 2)
     # print(f'min of data: {data.min()}')
     # print(f'max of data: {data.max()}')
 
@@ -123,9 +115,9 @@ if __name__ == '__main__':
 
     K = rbf_kernel(data, data, 1.8)
 
-    id = halving(K,400)
+    id = halving(K,50)
 
-    X = np.random.rand(400, 2) if test else data[id]
+    X = np.random.rand(50, 2) if test else data[id]
 
     # print(data[0])
     print(np.unique(id, return_counts=True))
