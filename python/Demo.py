@@ -1,5 +1,4 @@
 import numpy as np
-# from sklearn.metrics.pairwise import rbf_kernel
 from sklearn.svm import SVC
 from sklearn.cluster import KMeans
 from scipy.spatial.distance import pdist
@@ -25,7 +24,7 @@ def halving(K, m, candidate_index=None, lambda_=0.001):
     if candidate_index is None:
         candidate_index = np.array(range(n))
     
-    # print(f'candidate_index: {len(candidate_index)}')
+    # print(f'candidate_index: {candidate_index}')
 
     q = len(candidate_index)
 
@@ -45,10 +44,10 @@ def halving(K, m, candidate_index=None, lambda_=0.001):
         index[i] = candidate_index[I]
 
         # update K
-        K = K - np.dot(K[:, index[i]], K[index[i], :]) / (K[index[i], index[i]] + lambda_)
+        # K = K - np.dot(K[:, index[i]], K[index[i], :]) / (K[index[i], index[i]] + lambda_)
+        K = K - K[:, index[i]][:, np.newaxis] @ K[index[i], :][np.newaxis, :] / (K[index[i], index[i]] + lambda_)
 
     print('Done.\n')
-    
     return index
 
 def number_density(data, center, radius):
@@ -110,17 +109,28 @@ def SDAL(data, k):
 
 
 if __name__ == '__main__':
+    import scipy.io
 
-    np.random.seed()
-    data = np.random.rand(800, 2)
+    test = False
 
-    K = rbf_kernel(data,data,1.8)
+    # np.random.seed(0)
+    data = np.random.rand(10, 2)
+    print(f'min of data: {data.min()}')
+    print(f'max of data: {data.max()}')
+
+    # mat = scipy.io.loadmat('Syndata.mat') 
+    # data = mat['data']
+
+    K = rbf_kernel(data, data, 1.8)
 
     id = halving(K,400)
 
-    X = data[id]
+    X = np.random.rand(400, 2) if test else data[id]
 
+    # print(data[0])
+    print(np.unique(id, return_counts=True))
     print(X.shape)
     print(np.unique(X, return_counts=True))
 
-    SDAL(X,4)
+    center = SDAL(X,4)
+    print(center.shape)
