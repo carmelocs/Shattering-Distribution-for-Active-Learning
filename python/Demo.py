@@ -3,15 +3,16 @@ from sklearn.svm import SVC
 from sklearn.cluster import KMeans
 from scipy.spatial.distance import pdist
 from sklearn.neighbors import NearestNeighbors, KDTree
+from sklearn.metrics.pairwise import rbf_kernel
 
-def rbf_kernel(X, Y, sigma):
-    N, K = X.shape
-    M = Y.shape[0]
+# def rbf_kernel(X, Y, sigma):
+#     N, K = X.shape
+#     M = Y.shape[0]
 
-    K_xy = np.ones(M)*np.sum(X**2) + np.ones(N)*np.sum(Y**2) - 2*np.dot(X, Y.transpose())
-    K_xy = np.exp(-0.5 * K_xy / sigma**2)
+#     K_xy = np.ones(M)*np.sum(X**2) + np.ones(N)*np.sum(Y**2) - 2*np.dot(X, Y.transpose())
+#     K_xy = np.exp(-0.5 * K_xy / sigma**2)
 
-    return K_xy
+#     return K_xy
 
 def halving(K, m, candidate_index=None, lambda_=0.001):
     
@@ -121,16 +122,19 @@ if __name__ == '__main__':
     mat = scipy.io.loadmat('Syndata.mat') 
     data = mat['data']
 
-    K = rbf_kernel(data, data, 1.8)
+    K = rbf_kernel(data, data, gamma=1.8**(-2))
 
     id = halving(K,400)
 
     X = np.random.rand(400, 2) if test else data[id]
 
     # print(data[0])
-    print(np.unique(id, return_counts=True))
-    print(X.shape)
-    print(np.unique(X, return_counts=True))
+    # print(np.unique(id, return_counts=True))
+    # print(X.shape)
+    # print(np.unique(X, return_counts=True))
+    print(len(set(id)))
 
     center = SDAL(X,4)
+    print(center)
     print(center.shape)
+    print(len(set(center[:,1])))
