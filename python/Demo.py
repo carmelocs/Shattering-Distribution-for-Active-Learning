@@ -36,14 +36,19 @@ def halving(K, m, candidate_index=None, lambda_=0.001):
     for i in range(m):
         score = np.zeros(q)
         for j in range(q):
-            k = candidate_index[j]
-            # print(k)
-            score[j] = np.dot(K[k, :], K[:, k]) / (K[k, k] + lambda_)
+            if candidate_index[j] == -1:
+                continue
+            else:
+                k = candidate_index[j]
+                # print(k)
+                score[j] = np.dot(K[k, :], K[:, k]) / (K[k, k] + lambda_)
         
         I = score.argmax()
         # print(I)
         index[i] = candidate_index[I]
 
+        candidate_index[I] = -1
+        
         # update K
         # K = K - np.dot(K[:, index[i]], K[index[i], :]) / (K[index[i], index[i]] + lambda_)
         K = K - K[:, index[i]][:, np.newaxis] @ K[index[i], :][np.newaxis, :] / (K[index[i], index[i]] + lambda_)
@@ -122,7 +127,7 @@ if __name__ == '__main__':
     mat = scipy.io.loadmat('Syndata.mat') 
     data = mat['data']
 
-    K = rbf_kernel(data, data, gamma=1.8**(-2))
+    K = rbf_kernel(data, data, gamma=0.5*1.8**(-2))
 
     id = halving(K,400)
 
