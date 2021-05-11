@@ -99,7 +99,7 @@ def SDAL(data, k):
 
         F = number_density(data, center, radius)
         
-        if F-f==0 or len(np.argwhere(pdist(center)<2*radius))>0:
+        if (F-f)==0 or len(np.argwhere(pdist(center)<2*radius))>0:
             break
         else:
             f = F
@@ -143,3 +143,6 @@ if __name__ == '__main__':
     # print(center)
     # print(center.shape)
     # print(len(set(center[:,1])))
+
+    svc = SVC()
+    svc.fit(center)
