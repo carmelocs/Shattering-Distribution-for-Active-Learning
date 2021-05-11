@@ -143,6 +143,3 @@ if __name__ == '__main__':
     # print(center)
     # print(center.shape)
     # print(len(set(center[:,1])))
-
-    svc = SVC()
-    svc.fit(center)
