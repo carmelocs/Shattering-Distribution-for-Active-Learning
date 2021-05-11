@@ -140,6 +140,6 @@ if __name__ == '__main__':
     print(len(set(id)))
 
     center = SDAL(X,4)
-    print(center)
-    print(center.shape)
-    print(len(set(center[:,1])))
+    # print(center)
+    # print(center.shape)
+    # print(len(set(center[:,1])))
