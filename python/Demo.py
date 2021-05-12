@@ -57,22 +57,21 @@ def halving(K, m, candidate_index=None, lambda_=0.001):
     return index
 
 def number_density(data, center, radius):
-
     # print(f'length of data: {len(data)}\nlength of center: {len(center)}')
-
     f = 0
     for i in range(len(data)):
-        ball_dist = np.zeros(len(center))
-        dist = np.ones(len(center))
+        ball_dist = []
+        dist = np.zeros(len(center))
         for j in range(len(center)):
             dist[j] = np.linalg.norm(data[i, :] - center[j, :])
             if dist[j] < radius:
-                ball_dist[j] = dist[j]
+                ball_dist.append(dist[j])
 
         # print(np.exp(ball_dist/1.8))
-        f += np.sum(np.exp(ball_dist/1.8)**2) / (len(ball_dist) + 1)
+        f += np.sum(np.exp(np.array(ball_dist)/1.8)**2) / (len(ball_dist) + 1)
     
     return f
+
 
 def SDAL(data, k):
 
@@ -80,30 +79,31 @@ def SDAL(data, k):
     center = kmeans.cluster_centers_
 
     radius = 0.25
-    L, R = data.shape
+    num_data, _ = data.shape
     
     f = number_density(data, center, radius)
-    T = 0
-    while T<50:
+
+    for T in range(50):
         for j in range(k):
             ball = []
-            dist = np.empty(L)
-            for i in range(L):
-                dist[i] = np.linalg.norm(data[i] - center[j])
+            dist = np.zeros(num_data)
+            for i in range(num_data):
+                dist[i] = np.linalg.norm(data[i, :] - center[j, :])
                 if dist[i] < radius:
                     ball.append(data[i])
+            # print(len(ball))
             if len(ball)==0:
                 center[j] = center[j]
             else:
-                center[j] = np.mean(ball)
+                center[j] = np.mean(np.array(ball), axis=0)
+                # print(center[j])
 
         F = number_density(data, center, radius)
-        
+
         if (F-f)==0 or len(np.argwhere(pdist(center)<2*radius))>0:
             break
         else:
             f = F
-        T+=1
         radius*=1.1
     
     tree = KDTree(data)
@@ -111,7 +111,7 @@ def SDAL(data, k):
     # print(idx)
     center = data[idx].squeeze()
             
-    return center
+    return center, radius
 
 
 if __name__ == '__main__':
@@ -139,7 +139,22 @@ if __name__ == '__main__':
     # print(np.unique(X, return_counts=True))
     print(len(set(id)))
 
-    center = SDAL(X,4)
+    center, radius = SDAL(X,5)
+    print(center)
+    print(center.shape)
+    print(len(set(center[:,1])))
+
+    import matplotlib.pyplot as plt
+
+    # kmeans = KMeans(n_clusters=5).fit(data)
+    # center = kmeans.cluster_centers_
+    # radius = 0.25
     # print(center)
-    # print(center.shape)
-    # print(len(set(center[:,1])))
+
+    fig = plt.figure()
+    # ax = fig.add_subplot(1, 1, 1)
+    plt.scatter(data[id, 0], data[id, 1], c='b', s=10)
+    plt.scatter(center[:, 0], center[:, 1], c='g', marker='s', s=10)
+    plt.scatter(center[:, 0], center[:, 1], c='', marker='o', edgecolors='r', s=4000*radius)
+    plt.show()
+    
