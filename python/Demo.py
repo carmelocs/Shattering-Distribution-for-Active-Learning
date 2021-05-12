@@ -5,6 +5,10 @@ from scipy.spatial.distance import pdist
 from sklearn.neighbors import NearestNeighbors, KDTree
 from sklearn.metrics.pairwise import rbf_kernel
 
+import warnings
+import matplotlib.cbook
+warnings.filterwarnings("ignore",category=matplotlib.cbook.mplDeprecation)
+
 # def rbf_kernel(X, Y, sigma):
 #     N, K = X.shape
 #     M = Y.shape[0]
@@ -32,7 +36,7 @@ def halving(K, m, candidate_index=None, lambda_=0.001):
     index = np.empty(m, dtype=int)
     # print(f'number of index: {index.shape}')
 
-    print('Selecting samples......')
+    print(f'Selecting {m} samples......')
     for i in range(m):
         score = np.zeros(q)
         for j in range(q):
@@ -129,32 +133,50 @@ if __name__ == '__main__':
 
     K = rbf_kernel(data, data, gamma=0.5*1.8**(-2))
 
-    id = halving(K,400)
+    # id = halving(K,400)
 
-    X = np.random.rand(400, 2) if test else data[id]
+    indices = []
+    for i in range(1, 9):
+        idx = halving(K, 100*i)
+        indices.append(idx)
+
+    import matplotlib.pyplot as plt
+
+    fig = plt.figure()
+
+    # for i, idx in enumerate(indices, 1):
+    #     ax = fig.add_subplot(2,3,i)
+    #     ax.scatter(data[idx, 0], data[idx, 1], color='g', s=10, label='samples')
+    #     ax.legend()
+    #     print(f'Number of samples in iter_{i}: {len(set(idx))}')
+    # plt.show()
+
+    for i, idx in enumerate(indices, 1):
+        
+        num_samples = 100*i
+
+        X = data[idx]
+        center, radius = SDAL(X,5)
+        # print(f'center: \n{center}\n{center.shape}')
+        # print(len(set(center[:,1])))
+        print(f'Radius of iter_{i}: {radius}')
+            
+        ax = fig.add_subplot(2, 4, i)
+        ax.scatter(data[idx, 0], data[idx, 1], color='b', s=10)
+        ax.scatter(center[:, 0], center[:, 1], color='g', marker='s', s=10)
+        ax.scatter(center[:, 0], center[:, 1], color='', marker='o', edgecolors='r', s=4000*radius)
+        plt.title(f'{num_samples} samples')
+    
+    plt.show()
+
 
     # print(data[0])
     # print(np.unique(id, return_counts=True))
     # print(X.shape)
     # print(np.unique(X, return_counts=True))
-    print(f'number of samples: {len(set(id))}')
+    # print(f'number of samples: {len(set(id))}')
 
-    center, radius = SDAL(X,5)
-    print(f'center: \n{center}\n{center.shape}')
-    # print(len(set(center[:,1])))
-    print(f'radius: {radius}')
 
-    import matplotlib.pyplot as plt
 
-    # kmeans = KMeans(n_clusters=5).fit(data)
-    # center = kmeans.cluster_centers_
-    # radius = 0.25
-    # print(center)
 
-    fig = plt.figure()
-    # ax = fig.add_subplot(1, 1, 1)
-    plt.scatter(data[id, 0], data[id, 1], c='b', s=10)
-    plt.scatter(center[:, 0], center[:, 1], c='g', marker='s', s=10)
-    plt.scatter(center[:, 0], center[:, 1], c='', marker='o', edgecolors='r', s=4000*radius)
-    plt.show()
     
