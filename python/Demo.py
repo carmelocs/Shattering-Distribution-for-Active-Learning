@@ -137,12 +137,12 @@ if __name__ == '__main__':
     # print(np.unique(id, return_counts=True))
     # print(X.shape)
     # print(np.unique(X, return_counts=True))
-    print(len(set(id)))
+    print(f'number of samples: {len(set(id))}')
 
     center, radius = SDAL(X,5)
-    print(center)
-    print(center.shape)
-    print(len(set(center[:,1])))
+    print(f'center: \n{center}\n{center.shape}')
+    # print(len(set(center[:,1])))
+    print(f'radius: {radius}')
 
     import matplotlib.pyplot as plt
 
