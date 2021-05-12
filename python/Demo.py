@@ -165,7 +165,7 @@ if __name__ == '__main__':
         ax.scatter(data[idx, 0], data[idx, 1], color='b', s=10)
         ax.scatter(center[:, 0], center[:, 1], color='g', marker='s', s=10)
         ax.scatter(center[:, 0], center[:, 1], color='', marker='o', edgecolors='r', s=4000*radius)
-        plt.title(f'{num_samples} samples')
+        plt.title(f'{num_samples} samples (radius: {radius})')
     
     plt.show()
 
