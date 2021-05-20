@@ -7,7 +7,7 @@ import random
 import matplotlib.pyplot as plt
 
 
-def guassian_kernel(source, target, kernel_mul=2.0, kernel_num=5, fix_sigma=None):
+def gaussian_kernel(source, target, kernel_mul=2.0, kernel_num=5, fix_sigma=None):
     '''
     将源域数据和目标域数据转化为核矩阵，即上文中的K
     Params: 
@@ -58,14 +58,16 @@ def mmd_rbf(source, target, kernel_mul=2.0, kernel_num=5, fix_sigma=None):
     '''
     source_num = int(source.size()[0])#一般默认为源域和目标域的batchsize相同
     target_num = int(target.size()[0])
-    kernels = guassian_kernel(source, target,
+    kernels = gaussian_kernel(source, target,
         kernel_mul=kernel_mul, kernel_num=kernel_num, fix_sigma=fix_sigma)
     #根据式（3）将核矩阵分成4部分
-    XX = kernels[:source_num, :source_num]
-    YY = kernels[source_num:, source_num:]
-    XY = kernels[:source_num, source_num:]
-    YX = kernels[source_num:, :source_num]
-    loss = torch.mean(XX + YY - XY -YX)
+    XX = kernels[:source_num, :source_num].mean()
+    YY = kernels[source_num:, source_num:].mean()
+    XY = kernels[:source_num, source_num:].mean()
+    YX = kernels[source_num:, :source_num].mean()
+    # print(XX.shape, YY.shape, XY.shape, YX.shape)
+    # loss = torch.mean(XX + YY - XY -YX)
+    loss = XX + YY - XY - YX
 
     return loss#因为一般都是n==m，所以L矩阵一般不加入计算
 
@@ -130,15 +132,15 @@ if __name__ == '__main__':
     print(f'Done......')
 
     data_1 = []
-    data_2 = []
+    # data_2 = []
     for i, idx in enumerate(indices, 1):
         data_1.append(data[idx,:])
-        data_2.append(data[random.sample(range(0, len(data)), intervel*i), :])
+        # data_2.append(data[random.sample(range(0, len(data)), intervel*i), :])
 
     mmd_scores = []
 
     for i in range(len(data)//intervel):
-        mmd_scores.append(mmd_rbf(torch.Tensor(data_1[i]), torch.Tensor(data_2[i])))
+        mmd_scores.append(mmd_rbf(torch.Tensor(data_1[i]), torch.Tensor(data)))
 
     shattering_ratio = [(1 - intervel*i/len(data)) for i in range (1,len(data)//intervel + 1)]
 
