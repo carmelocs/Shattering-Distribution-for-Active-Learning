@@ -1,11 +1,15 @@
 import numpy as np
-from sqlalchemy.sql.expression import false
 import torch
 from sklearn.metrics.pairwise import rbf_kernel
 import scipy.io
-import random
 import matplotlib.pyplot as plt
-
+from halving import halving
+import argparse
+from pathlib import Path
+from tqdm import tqdm
+import time
+import datetime
+import logging
 
 def gaussian_kernel(source, target, kernel_mul=2.0, kernel_num=5, fix_sigma=None):
     '''
@@ -72,79 +76,87 @@ def mmd_rbf(source, target, kernel_mul=2.0, kernel_num=5, fix_sigma=None):
     return loss#因为一般都是n==m，所以L矩阵一般不加入计算
 
 
-def halving(K, n_samples, candidate_index=None, lambda_=0.001):
-    
-    n_data = K.shape[0]
-    # print(f'number of data: {n}')
-
-    n_samples = min(n_data, n_samples)
-    # print(f'number of samples: {m}')
-
-    if candidate_index is None:
-        candidate_index = np.array(range(n_data))
-    
-    # print(f'candidate_index: {candidate_index}')
-
-    n_query = len(candidate_index)
-
-    index = np.empty(n_samples, dtype=int)
-    # print(f'number of index: {index.shape}')
-
-    # print('Selecting samples......')
-    for i in range(n_samples):
-        score = np.zeros(n_query)
-        for j in range(n_query):
-            if candidate_index[j] == -1:
-                continue
-            else:
-                k = candidate_index[j]
-                score[j] = np.dot(K[k, :], K[:, k]) / (K[k, k] + lambda_)
-        
-        I = score.argmax()
-        index[i] = candidate_index[I]
-
-        candidate_index[I] = -1
-        
-        # update K
-        K = K - K[:, index[i]][:, np.newaxis] @ K[index[i], :][np.newaxis, :] / (K[index[i], index[i]] + lambda_)
-
-    # print('Done.\n')
-    return index
-
 if __name__ == '__main__':
+
+    parser = argparse.ArgumentParser()
+    parser.add_argument('--interval',
+                        type=int,
+                        default=10,
+                        help='increase of samples')
+    parser.add_argument('--log_dir',
+                        type=str,
+                        default='logs/',
+                        help='log directory [default: logs]')
+
+    opt = parser.parse_args()
+    print(opt)
+
+    experiment_dir = Path('./experiment/')
+    experiment_dir.mkdir(exist_ok=True)
+    file_dir = Path(
+        str(experiment_dir) + '/' +
+        str(datetime.datetime.now().strftime('%Y-%m-%d_%H-%M')))
+    file_dir.mkdir(exist_ok=True)
+
+    log_dir = file_dir.joinpath(opt.log_dir)
+    log_dir.mkdir(exist_ok=True)
+    '''LOG'''
+    logger = logging.getLogger('MMD loss')
+    logger.setLevel(logging.INFO)
+    formatter = logging.Formatter(
+        '%(asctime)s - %(name)s - %(levelname)s - %(message)s')
+    file_handler = logging.FileHandler(str(log_dir) + '/MMD_loss.txt')
+    file_handler.setLevel(logging.INFO)
+    file_handler.setFormatter(formatter)
+    logger.addHandler(file_handler)
+    logger.info('PARAMETER ...')
+    logger.info(opt)
+
+    interval = opt.interval
 
     mat = scipy.io.loadmat('Syndata.mat')
     data = mat['data']
-    data.shape
+    print(f'Data: {data.shape}')
+    logger.info(f'Data: {data.shape}')
 
     K = rbf_kernel(data, data, 0.5/1.8**2)
     print(f"K: {K.shape}")
-    print(K[:10])
-
-    intervel = 10
+    logger.info(f'K: {K.shape}')
+    # print(K[:10])
     
     indices = []
     print(f'Selecting samples......')
-    for i in range(intervel, len(data)+intervel, intervel):
+    for i in range(interval, len(data)+interval, interval):
         idx = halving(K, i)
         indices.append(idx)
 
     print(f'Done......')
 
+    logger.info(f'Indices: {len(indices)}')
     data_1 = []
     # data_2 = []
     for i, idx in enumerate(indices, 1):
         data_1.append(data[idx,:])
-        # data_2.append(data[random.sample(range(0, len(data)), intervel*i), :])
+        # data_2.append(data[random.sample(range(0, len(data)), interval*i), :])
 
-    mmd_scores = []
+    mmd_loss = []
 
-    for i in range(len(data)//intervel):
-        mmd_scores.append(mmd_rbf(torch.Tensor(data_1[i]), torch.Tensor(data)))
+    for i in range(len(data)//interval):
+        mmd_loss.append(mmd_rbf(torch.Tensor(data_1[i]), torch.Tensor(data)))
 
-    shattering_ratio = [(1 - intervel*i/len(data)) for i in range (1,len(data)//intervel + 1)]
+    shattering_ratio = [(1 - interval*i/len(data)) for i in range (1,len(data)//interval + 1)]
+    mmd_loss.reverse()
+    shattering_ratio.reverse()
+    # idx = int(len(shattering_ratio)/2)
+    # print(len(shattering_ratio), idx)
+    
 
-    plt.plot(shattering_ratio, mmd_scores)
-    plt.xlabel('Shattering ratio')
-    plt.ylabel('MMD loss')
-    plt.show()
+    rs_idx = mmd_loss.index([mmd for mmd in mmd_loss if mmd < 1.5e-2].pop())
+    print(f'Auto Shattering ratio: ({rs_idx}) {round(shattering_ratio[rs_idx], 5)}\nMMD loss: {round(mmd_loss[rs_idx].item(), 5)}')
+    logger.info(f'Auto Shattering ratio: ({rs_idx}) {round(shattering_ratio[rs_idx], 5)}\nMMD loss: {round(mmd_loss[rs_idx].item(), 5)}')
+
+    plt.plot(shattering_ratio, mmd_loss)
+    plt.xlabel(f'Shattering ratio ({interval}/{len(data)})')
+    plt.ylabel(f'MMD loss')
+    # plt.show()
+    plt.savefig(f'./{file_dir}/mmd_loss_{interval}')
