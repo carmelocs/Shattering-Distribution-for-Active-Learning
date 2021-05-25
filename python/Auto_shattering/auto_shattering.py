@@ -7,6 +7,7 @@ from halving import halving
 from mmd_loss import mmd_rbf
 import argparse
 
+
 parser = argparse.ArgumentParser()
 parser.add_argument('--interval',
                     type=int,
