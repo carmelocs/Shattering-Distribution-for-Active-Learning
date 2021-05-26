@@ -1,6 +1,7 @@
 import numpy as np
 import torch
 
+
 def halving(K, n_samples, candidate_index=None, lambda_=0.001):
     
     n_data = K.shape[0]
@@ -39,3 +40,25 @@ def halving(K, n_samples, candidate_index=None, lambda_=0.001):
 
     # print('Done.\n')
     return index
+
+if __name__ == '__main__':
+    import scipy.io
+    from sklearn.metrics.pairwise import rbf_kernel
+    import matplotlib.pyplot as plt
+
+    mat = scipy.io.loadmat('Syndata.mat') 
+    data = mat['data']
+
+    K = rbf_kernel(data, data, gamma=0.5*1.8**(-2))
+
+    idx = halving(K, n_samples=400)
+
+    fig = plt.figure()
+    ax1 = fig.add_subplot(1, 2, 1)
+    ax1.scatter(data[:, 0], data[:, 1], color='b')
+    ax1.set_title(f'Input data')
+    ax2 = fig.add_subplot(1, 2, 2)
+    ax2.scatter(data[idx, 0], data[idx, 1], color='g')
+    ax2.set_title(f'Shattered data')
+    
+    plt.show()
